@@ -41,6 +41,24 @@ class CpuifBase:
         the module's definition
         """
         return []
+    
+    def get_wrapper_port_connections(self) -> str:
+        """
+        Generate port connections for the wrapper module.
+        By default, pass through all ports with same names.
+        """
+        # Parse the port_declaration to extract port names
+        lines = []
+        for line in self.port_declaration.split('\n'):
+            line = line.strip().rstrip(',')
+            if not line:
+                continue
+            # Extract the signal name (last word before comma)
+            parts = line.split()
+            if len(parts) >= 2:
+                signal_name = parts[-1]
+                lines.append(f".{signal_name}({signal_name})")
+        return ",\n".join(lines)
 
     def _get_template_path_class_dir(self) -> str:
         """

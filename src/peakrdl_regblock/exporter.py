@@ -131,6 +131,7 @@ class RegblockExporter:
 
         cpuif_cls = kwargs.pop("cpuif_cls", None) or APB4_Cpuif # type: Type[CpuifBase]
         generate_hwif_report = kwargs.pop("generate_hwif_report", False) # type: bool
+        generate_hwif_wrapper = kwargs.pop("generate_hwif_wrapper", False) # type: bool
 
         # Check for stray kwargs
         if kwargs:
@@ -195,6 +196,12 @@ class RegblockExporter:
         template = self.jj_env.get_template("module_tmpl.sv")
         stream = template.stream(context)
         stream.dump(module_file_path)
+
+        if generate_hwif_wrapper:
+            wrapper_file_path = os.path.join(output_dir, self.ds.module_name + "_wrapper.sv")
+            template = self.jj_env.get_template("wrapper_tmpl.sv")
+            stream = template.stream(context)
+            stream.dump(wrapper_file_path)
 
         if hwif_report_file:
             hwif_report_file.close()

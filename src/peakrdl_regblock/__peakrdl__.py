@@ -105,6 +105,13 @@ class Exporter(ExporterSubcommandPlugin):
         )
 
         arg_group.add_argument(
+            "--hwif-wrapper",
+            action="store_true",
+            default=False,
+            help="Generate a wrapper module that flattens hwif structs into individual signals"
+        )
+
+        arg_group.add_argument(
             "--addr-width",
             type=int,
             default=None,
@@ -199,6 +206,7 @@ class Exporter(ExporterSubcommandPlugin):
             retime_external_mem=retime_external_mem,
             retime_external_addrmap=retime_external_addrmap,
             generate_hwif_report=options.hwif_report,
+            generate_hwif_wrapper=options.hwif_wrapper,
             address_width=options.addr_width,
             default_reset_activelow=default_reset_activelow,
             default_reset_async=default_reset_async,
