@@ -46,15 +46,23 @@ class HwifSignal:
         return name
     
     def _generate_port_name(self) -> str:
-        """Generate port name with suffix removal"""
+        """Generate port name with suffix removal ONLY if struct path ends with .next or .value"""
         name = self.flat_name
         
-        # Remove _next suffix
-        if name.endswith("_next"):
-            name = name[:-5]
-        # Remove _value suffix
-        elif name.endswith("_value"):
-            name = name[:-6]
+        # Only remove suffix if the struct path actually ends with .next or .value
+        # (not if it's part of the field name like f_next_value)
+        
+        # Check if struct path (without bit range) ends with .next
+        path_no_bitrange = re.sub(r'\[\d+(?::\d+)?\]$', '', self.struct_path)
+        
+        if path_no_bitrange.endswith(".next"):
+            # Remove _next suffix from flat name
+            if name.endswith("_next"):
+                name = name[:-5]
+        elif path_no_bitrange.endswith(".value"):
+            # Remove _value suffix from flat name
+            if name.endswith("_value"):
+                name = name[:-6]
         
         # Remove redundant names (e.g., x_x becomes x)
         parts = name.split('_')
@@ -147,4 +155,3 @@ def parse_signal_line(line: str) -> HwifSignal:
         array_dims.append((msb, lsb_idx))
     
     return HwifSignal(path, width, lsb, array_dims)
-
