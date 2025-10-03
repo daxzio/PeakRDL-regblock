@@ -34,11 +34,11 @@ class HwifSignal:
         # Remove prefix
         name = self.struct_path.replace(f"{self.prefix}.", "")
         
-        # Remove array ranges [N:M]
-        name = re.sub(r'\[(\d+):(\d+)\]', '', name)
+        # Remove array ranges [N:M] including negative indices (Q format fields)
+        name = re.sub(r'\[(-?\d+):(-?\d+)\]', '', name)
         
-        # Convert single indices [N] to _N
-        name = re.sub(r'\[(\d+)\]', r'_\1', name)
+        # Convert single indices [N] to _N (use abs() for negative indices)
+        name = re.sub(r'\[(-?\d+)\]', lambda m: f"_{abs(int(m.group(1)))}", name)
         
         # Replace dots with underscores
         name = name.replace(".", "_")
@@ -124,31 +124,35 @@ def parse_signal_line(line: str) -> HwifSignal:
     
     Returns HwifSignal object
     """
-    # Extract bit range if present at the end
+    # Extract bit range if present at the end (handle negative indices for Q format)
     width = 1
     lsb = 0
     path = line
     
-    # Check if line ends with a bit range [MSB:LSB] or [BIT]
-    match = re.search(r'\[(\d+)(?::(\d+))?\]$', line)
+    # Check if line ends with a bit range [MSB:LSB] or [BIT] (including negative numbers)
+    match = re.search(r'\[(-?\d+)(?::(-?\d+))?\]$', line)
     if match:
         # Extract the path without the bit range
         path = line[:match.start()]
         
         if match.group(2):
-            # Range [MSB:LSB]
+            # Range [MSB:LSB] - can have negative values for Q format fields
             msb = int(match.group(1))
-            lsb = int(match.group(2))
-            width = msb - lsb + 1
+            lsb_val = int(match.group(2))
+            width = abs(msb - lsb_val) + 1
+            # For port declarations, Q format fields always start at bit 0
+            lsb = 0
         else:
-            # Single bit [BIT]
-            lsb = int(match.group(1))
+            # Single bit [BIT] - can be negative
+            # Single bit ports are always [0:0]
+            lsb = 0
             width = 1
     
     # Extract array dimensions from the path
     array_dims = []
     
     # Find all array ranges in the path (e.g., [0:63])
+    # Array dimensions should only have positive indices
     for match in re.finditer(r'\[(\d+):(\d+)\]', path):
         msb = int(match.group(1))
         lsb_idx = int(match.group(2))
